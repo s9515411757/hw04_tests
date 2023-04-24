@@ -63,8 +63,9 @@ class PostPagesTests(TestCase):
                 self.assertTemplateUsed(response, template)
 
     def test_home_page_show_correct_context(self):
-        response = self.authorized_client.get(reverse(
-                'posts:post_create'))
+        response = self.authorized_client.get(
+            reverse('posts:post_create')
+        )
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField
