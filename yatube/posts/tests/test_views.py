@@ -5,7 +5,6 @@ from django import forms
 from django.conf import settings
 
 from ..models import Post, Group
-from ..forms import PostForm
 
 User = get_user_model()
 
