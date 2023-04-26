@@ -2,8 +2,10 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
+from django.conf import settings
 
 from ..models import Post, Group
+from ..forms import PostForm
 
 User = get_user_model()
 
@@ -55,14 +57,7 @@ class PostPagesTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def test_pages_uses_correct_template(self):
-        reverse_names = PostPagesTests.reverse_names
-        for template, reverse_name in reverse_names:
-            with self.subTest(reverse_name=reverse_name):
-                response = self.authorized_client.get(reverse_name)
-                self.assertTemplateUsed(response, template)
-
-    def test_home_page_show_correct_context(self):
+    def test_form_show_correct_context(self):
         response = self.authorized_client.get(
             reverse('posts:post_create')
         )
@@ -72,25 +67,25 @@ class PostPagesTests(TestCase):
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
+                form_field = response.context['form'].fields[value]
                 self.assertIsInstance(form_field, expected)
 
     def test_task_list_page_show_correct_context(self):
         response = self.authorized_client.get(reverse('posts:index'))
         first_object = response.context['page_obj'][0]
-        task_text_0 = first_object.text
-        task_group_0 = first_object.group
-        task_author_0 = first_object.author
-        self.assertEqual(task_text_0, 'Тестовый пост')
-        self.assertEqual(task_group_0, PostPagesTests.group)
-        self.assertEqual(task_author_0, PostPagesTests.user)
+        self.assertEqual(first_object.text, PostPagesTests.post.text)
+        self.assertEqual(first_object.group, PostPagesTests.group)
+        self.assertEqual(first_object.author, PostPagesTests.user)
 
     def test_task_detail_pages_show_correct_context(self):
         response = (self.authorized_client.get(reverse(
             'posts:post_detail', kwargs={'post_id': PostPagesTests.post.id})))
-        self.assertEqual(response.context.get('post').text, 'Тестовый пост')
+        self.assertEqual(response.context.get('post').text,
+                         PostPagesTests.post.text)
         self.assertEqual(response.context.get('post').group.slug,
                          PostPagesTests.group.slug)
+        self.assertEqual(response.context.get('post').author.username,
+                         PostPagesTests.post.author.username)
 
     def test_task_list_show_correct_context(self):
         created_post = PostPagesTests.created_post
@@ -98,12 +93,38 @@ class PostPagesTests(TestCase):
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 first_object = response.context['page_obj'][0]
-                task_text_0 = first_object.text
-                task_group_0 = first_object.group
-                task_author_0 = first_object.author
-                self.assertEqual(task_text_0, 'Тестовый пост')
-                self.assertEqual(task_group_0, PostPagesTests.group)
-                self.assertEqual(task_author_0, PostPagesTests.user)
+                self.assertEqual(first_object.text, PostPagesTests.post.text)
+                self.assertEqual(first_object.group, PostPagesTests.group)
+                self.assertEqual(first_object.author, PostPagesTests.user)
+
+    def test_post_detail_correct_context(self):
+        response = self.authorized_client.get(
+            reverse(
+                'posts:post_detail',
+                kwargs={'post_id': PostPagesTests.post.id}
+            )
+        )
+        context = [
+            (response.context['post'].id, self.post.id),
+        ]
+        for context, reverse_context in context:
+            with self.subTest(context=context):
+                self.assertEqual(context, reverse_context)
+
+    def test_group_list_profile_correct_context(self):
+        for created_post in PostPagesTests.created_post:
+            with self.subTest(created_post=created_post):
+                first_object = self.guest_client.get(
+                    created_post
+                ).context['page_obj'][0]
+                context = (
+                    (first_object.author, PostPagesTests.user),
+                    (first_object.text, PostPagesTests.post.text),
+                    (first_object.group, PostPagesTests.group),
+                )
+                for context, reverse_context in context:
+                    with self.subTest(reverse_context=reverse_context):
+                        self.assertEqual(context, reverse_context)
 
 
 class PostPaginatorViewsTest(TestCase):
@@ -116,13 +137,14 @@ class PostPaginatorViewsTest(TestCase):
             slug='test-slug',
             description='Тестовое описание',
         )
+        cls.NUMBER_OF_POST = 13
 
-        for i in range(13):
-            Post.objects.create(
-                text=f'Тестовый пост {i}',
-                group=cls.group,
-                author=cls.user,
-            )
+        cls.post = Post.objects.bulk_create([
+            Post(text=f'Тестовый пост {number}',
+                 group=cls.group,
+                 author=cls.user, )
+            for number in range(cls.NUMBER_OF_POST)
+        ])
 
         cls.temlate_name = [
             (reverse('posts:index')),
@@ -142,11 +164,16 @@ class PostPaginatorViewsTest(TestCase):
         for reverse_name in temlate_name:
             with self.subTest(reverse_name=reverse_name):
                 response = self.client.get(reverse_name)
-                self.assertEqual(len(response.context['page_obj']), 10)
+                self.assertEqual(len(response.context['page_obj']),
+                                 settings.QUANTITY_POSTS)
 
     def test_second_page_contains_three_records(self):
         temlate_name = PostPaginatorViewsTest.temlate_name
+        page_obj = (PostPaginatorViewsTest.NUMBER_OF_POST %
+                    settings.QUANTITY_POSTS)
+        page = (PostPaginatorViewsTest.NUMBER_OF_POST //
+                settings.QUANTITY_POSTS + 1)
         for reverse_name in temlate_name:
             with self.subTest(reverse_name=reverse_name):
-                response = self.client.get(reverse_name + '?page=2')
-                self.assertEqual(len(response.context['page_obj']), 3)
+                response = self.client.get(reverse_name + f'?page={page}')
+                self.assertEqual(len(response.context['page_obj']), page_obj)

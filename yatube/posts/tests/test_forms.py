@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..forms import PostForm
 from ..models import Post, Group
 
 User = get_user_model()
@@ -24,7 +23,6 @@ class PostCreateFormTests(TestCase):
             group=cls.group,
             author=cls.user,
         )
-        cls.form = PostForm()
 
     def setUp(self):
         self.authorized_client = Client()
@@ -33,32 +31,25 @@ class PostCreateFormTests(TestCase):
     def test_cant_create_existing_slug(self):
         post_count = Post.objects.count()
         form_data = {
-            'title': 'Тестовая группа',
-            'text': 'Тестовый пост1',
-            'slug': 'test-slug',
+            'text': 'Тестовый пост1'
         }
         response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
             follow=True
         )
-
         self.assertRedirects(response, reverse(
             'posts:profile',
             kwargs={'username': PostCreateFormTests.user.username}))
         self.assertEqual(Post.objects.count(), post_count + 1)
-        self.assertTrue(
-            Post.objects.filter(
-                text='Тестовый пост1'
-            ).exists()
-        )
+        post = Post.objects.get(text='Тестовый пост1')
+        self.assertEqual(post.text, 'Тестовый пост1')
+        self.assertEqual(post.author.username, 'auth')
 
     def test_create_existing_slug(self):
         post_count = Post.objects.count()
         form_data = {
-            'title': 'Тестовая группа',
             'text': 'Тестовый пост2',
-            'slug': 'test-slug',
         }
         self.assertEqual(Post.objects.count(), post_count)
         self.authorized_client.post(
@@ -67,3 +58,6 @@ class PostCreateFormTests(TestCase):
             follow=True
         )
         self.assertEqual(Post.objects.count(), post_count + 1)
+        post = Post.objects.get(text='Тестовый пост2')
+        self.assertEqual(post.text, 'Тестовый пост2')
+        self.assertEqual(post.author.username, 'auth')
