@@ -23,7 +23,7 @@ class PostModelTest(TestCase):
         )
 
     def test_models_post_text(self):
-        self.assertEqual(PostModelTest.post.text, 'a' * 15)
+        self.assertEqual(str(PostModelTest.post), 'a' * 15)
 
     def test_models_group_title(self):
         self.assertEqual(PostModelTest.group.title, 'Тестовая группа')
