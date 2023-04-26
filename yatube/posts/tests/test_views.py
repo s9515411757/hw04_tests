@@ -87,8 +87,7 @@ class PostPagesTests(TestCase):
                          PostPagesTests.post.author.username)
 
     def test_task_list_show_correct_context(self):
-        created_post = PostPagesTests.created_post
-        for reverse_name in created_post:
+        for reverse_name in PostPagesTests.created_post:
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 first_object = response.context['page_obj'][0]
@@ -159,20 +158,18 @@ class PostPaginatorViewsTest(TestCase):
         self.client = Client()
 
     def test_first_page_contains_ten_records(self):
-        temlate_name = PostPaginatorViewsTest.temlate_name
-        for reverse_name in temlate_name:
+        for reverse_name in PostPaginatorViewsTest.temlate_name:
             with self.subTest(reverse_name=reverse_name):
                 response = self.client.get(reverse_name)
                 self.assertEqual(len(response.context['page_obj']),
                                  settings.QUANTITY_POSTS)
 
     def test_second_page_contains_three_records(self):
-        temlate_name = PostPaginatorViewsTest.temlate_name
         page_obj = (PostPaginatorViewsTest.NUMBER_OF_POST %
                     settings.QUANTITY_POSTS)
-        page = (PostPaginatorViewsTest.NUMBER_OF_POST //
-                settings.QUANTITY_POSTS + 1)
-        for reverse_name in temlate_name:
+        page = (PostPaginatorViewsTest.NUMBER_OF_POST
+                // settings.QUANTITY_POSTS + 1)
+        for reverse_name in PostPaginatorViewsTest.temlate_name:
             with self.subTest(reverse_name=reverse_name):
                 response = self.client.get(reverse_name + f'?page={page}')
                 self.assertEqual(len(response.context['page_obj']), page_obj)
