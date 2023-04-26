@@ -77,4 +77,3 @@ class PostModelTest(TestCase):
                 self.assertEqual(
                     PostModelTest.group._meta.get_field(field).help_text,
                     expected_value)
-
