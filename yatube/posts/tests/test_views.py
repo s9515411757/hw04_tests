@@ -174,5 +174,5 @@ class PostPaginatorViewsTest(TestCase):
                 settings.QUANTITY_POSTS + 1)
         for reverse_name in temlate_name:
             with self.subTest(reverse_name=reverse_name):
-                response = self.client.get(reverse_name+f'?page={page}')
+                response = self.client.get(reverse_name + f'?page={page}')
                 self.assertEqual(len(response.context['page_obj']), page_obj)
