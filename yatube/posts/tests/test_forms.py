@@ -69,7 +69,7 @@ class PostCreateFormTests(TestCase):
             reverse(
                 'posts:post_edit',
                 kwargs={'post_id': self.post.pk}
-                ),
+            ),
             data=form_data,
             follow=True
         )
@@ -83,4 +83,3 @@ class PostCreateFormTests(TestCase):
         for first_object, first_result in form_data_result:
             with self.subTest(context=first_object):
                 self.assertEqual(first_object, first_result)
-
