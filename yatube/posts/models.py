@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 User = get_user_model()
+CONSTANT_STR = 15
 
 
 class Group(models.Model):
@@ -21,7 +22,7 @@ class Group(models.Model):
     )
 
     def __str__(self):
-        return self.title[:15]
+        return self.title[:CONSTANT_STR]
 
 
 class Post(models.Model):
@@ -51,4 +52,4 @@ class Post(models.Model):
         ordering = ('-pub_date', )
 
     def __str__(self):
-        return self.text[:15]
+        return self.text[:CONSTANT_STR]
