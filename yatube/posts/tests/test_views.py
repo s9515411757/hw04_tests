@@ -115,12 +115,7 @@ class PostPagesTests(TestCase):
         for reverse_url in self.template_group_profile:
             response = self.authorized_client.get(reverse_url)
             for post in response.context['page_obj'].object_list:
-                context = [
-                    (post.text, self.post.text),
-                    (post.group, self.group),
-                    (post.author, self.user)
-                ]
-                for first_object, reverse_name in context:
+                for first_object, reverse_name in self.context(post):
                     with self.subTest(first_object=first_object):
                         self.assertEqual(first_object, reverse_name)
 
