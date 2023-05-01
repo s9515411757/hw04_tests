@@ -107,7 +107,8 @@ class PostPagesTests(TestCase):
     def test_group_correct_context(self):
         """Проверка существуют ли посты второй группы"""
         response = self.authorized_client.get(reverse(
-                'posts:group_list', kwargs={'slug': self.group_1.slug}),)
+            'posts:group_list', kwargs={'slug': self.group_1.slug})
+        )
         self.assertFalse(response.context['page_obj'])
 
     def test_group_profile_detail_object_list_correct_context(self):
