@@ -15,6 +15,11 @@ class PostPagesTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
+        cls.group_1 = Group.objects.create(
+            title='Тестовая группа1',
+            slug='test-slug1',
+            description='Тестовое описание',
+        )
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -32,9 +37,11 @@ class PostPagesTests(TestCase):
             reverse(
                 'posts:profile', kwargs={'username': cls.user.username})
         ]
-        cls.template = [
-            reverse('posts:post_detail', kwargs={'post_id': cls.post.pk}),
-            reverse('posts:post_create')
+        cls.template_group_profile = [
+            reverse(
+                'posts:group_list', kwargs={'slug': cls.group.slug}),
+            reverse(
+                'posts:profile', kwargs={'username': cls.user.username})
         ]
 
     def setUp(self):
@@ -88,6 +95,34 @@ class PostPagesTests(TestCase):
         )
         form_field = response.context['form']
         self.assertIsInstance(form_field, PostForm)
+
+    def test_form_post_detail_correct_context(self):
+        """Проверка контекста в шаблоне post_detail"""
+        response = self.authorized_client.get(reverse(
+            'posts:post_edit',
+            kwargs={'post_id': self.post.pk})
+        )
+        self.assertTrue(response.context['is_edit'])
+
+    def test_group_correct_context(self):
+        """Проверка существуют ли посты второй группы"""
+        response = self.authorized_client.get(reverse(
+                'posts:group_list', kwargs={'slug': self.group_1.slug}),)
+        self.assertFalse(response.context['page_obj'])
+
+    def test_group_profile_detail_object_list_correct_context(self):
+        """Проверка контекста на страницах автора и группы"""
+        for reverse_url in self.template_group_profile:
+            response = self.authorized_client.get(reverse_url)
+            for post in response.context['page_obj'].object_list:
+                context = [
+                    (post.text, self.post.text),
+                    (post.group, self.group),
+                    (post.author, self.user)
+                ]
+                for first_object, reverse_name in context:
+                    with self.subTest(first_object=first_object):
+                        self.assertEqual(first_object, reverse_name)
 
 
 class PostPaginatorViewsTest(TestCase):
