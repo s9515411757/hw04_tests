@@ -36,6 +36,7 @@ class PostCreateFormTests(TestCase):
             'text': 'Тестовый пост1',
             'group': self.group.pk
         }
+        self.assertEqual(Post.objects.count(), post_count)
         response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
@@ -49,10 +50,10 @@ class PostCreateFormTests(TestCase):
         form_data_result = [
             (post.text, form_data['text']),
             (post.author, self.user),
-            (post.group, self.group)
+            (post.group.pk, form_data['group'])
         ]
         for first_object, first_result in form_data_result:
-            with self.subTest(context=first_object):
+            with self.subTest(first_object=first_object):
                 self.assertEqual(first_object, first_result)
 
     def test_create_existing_slug(self):
@@ -74,12 +75,12 @@ class PostCreateFormTests(TestCase):
             follow=True
         )
         self.assertEqual(Post.objects.count(), post_count)
-        post = Post.objects.get(text='Тестовый пост2')
+        post = Post.objects.get(id=self.post.pk)
         form_data_result = [
-            (post.text, 'Тестовый пост2'),
+            (post.text, form_data['text']),
             (post.author, self.user),
-            (post.group, self.group)
+            (post.group.pk, form_data['group'])
         ]
         for first_object, first_result in form_data_result:
-            with self.subTest(context=first_object):
+            with self.subTest(first_object=first_object):
                 self.assertEqual(first_object, first_result)

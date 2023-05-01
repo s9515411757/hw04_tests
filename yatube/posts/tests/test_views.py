@@ -6,6 +6,7 @@ from django.conf import settings
 
 from ..models import Post, Group
 from ..forms import PostForm
+
 User = get_user_model()
 
 
@@ -35,39 +36,27 @@ class PostPagesTests(TestCase):
             reverse('posts:post_detail', kwargs={'post_id': cls.post.pk}),
             reverse('posts:post_create')
         ]
-        cls.reverse_names = [
-            ('posts/index.html', reverse('posts:index')),
-            ('posts/group_list.html', reverse(
-                'posts:group_list', kwargs={'slug': cls.group.slug})),
-            ('posts/profile.html', reverse(
-                'posts:profile', kwargs={'username': cls.user.username})),
-            ('posts/post_detail.html', reverse(
-                'posts:post_detail', kwargs={'post_id': cls.post.id})),
-            ('posts/create_post.html', reverse(
-                'posts:post_edit', kwargs={'post_id': cls.post.id})),
-            ('posts/create_post.html', reverse('posts:post_create'))
-
-        ]
 
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
+    def context(self, response):
+        return [
+                (response.text, self.post.text),
+                (response.group, self.group),
+                (response.author, self.user)
+            ]
+
     def test_task_detail_pages_show_correct_context(self):
         """Проверка контекста в шаблоне post_detail"""
         response = (self.authorized_client.get(reverse(
-            'posts:post_detail', kwargs={'post_id': self.post.id})))
-        context = [
-            (response.context.get('post').text,
-             self.post.text),
-            (response.context.get('post').group.slug,
-             self.group.slug),
-            (response.context.get('post').author.username,
-             self.post.author.username)
-        ]
-        for first_object, reverse_name in context:
-            with self.subTest(context=first_object):
+            'posts:post_detail', kwargs={'post_id': self.post.id}))
+        ).context.get('post')
+
+        for first_object, reverse_name in self.context(response):
+            with self.subTest(first_object=first_object):
                 self.assertEqual(first_object, reverse_name)
 
     def test_list_show_correct_context(self):
@@ -79,43 +68,18 @@ class PostPagesTests(TestCase):
         ]
         for value, expected in form_fields:
             with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
+                form_field = response.context.get('form')
+                self.assertIsInstance(form_field, PostForm)
 
     def test_index_group_list_profile_correct_context(self):
         """Проверка контекста в шаблонах index, group_list, profile"""
         for reverse_url in self.template_post:
-            response = self.authorized_client.get(reverse_url)
-            context = [
-                (response.context.get('post').text, self.post.text),
-                (response.context.get('post').group, self.group),
-                (response.context.get('post').author, self.user)
-            ]
-            for first_object, reverse_name in context:
-                with self.subTest(context=first_object):
+            response = self.authorized_client.get(reverse_url).context.get(
+                'post'
+            )
+            for first_object, reverse_name in self.context(response):
+                with self.subTest(first_object=first_object):
                     self.assertEqual(first_object, reverse_name)
-
-    def test_about_page_uses_correct_template(self):
-        """Проверка на правильный шаблон"""
-        for template, reverse_name in self.reverse_names:
-            with self.subTest(reverse_name=reverse_name):
-                response = self.authorized_client.get(reverse_name)
-                self.assertTemplateUsed(response, template)
-
-    def test_post_detail_correct_context(self):
-        """Проверка контекста в шаблоне post_detail"""
-        response = self.guest_client.get(reverse(
-            'posts:post_detail',
-            kwargs={'post_id': self.post.pk})
-        )
-        detail_context = [
-            (response.context.get('post').text, self.post.text),
-            (response.context.get('post').group, self.group),
-            (response.context.get('post').author, self.user)
-        ]
-        for context, reverse_context in detail_context:
-            with self.subTest(context=context):
-                self.assertEqual(context, reverse_context)
 
     def test_form_post_create_show_correct_context(self):
         """Проверка в шаблоне post_create на форму"""

@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Group, Post, CONSTANT_STR
+from ..models import Group, Post
 
 User = get_user_model()
 
@@ -24,8 +24,13 @@ class PostModelTest(TestCase):
 
     def test_models_post_group_text(self):
         """Проверка магического метода __str__"""
-        self.assertEqual(str(PostModelTest.post), 'a' * CONSTANT_STR)
-        self.assertEqual(str(PostModelTest.post), 'a' * CONSTANT_STR)
+        models_str = [
+            self.post,
+            self.group
+        ]
+        for models in models_str:
+            with self.subTest(models=models):
+                self.assertEqual(str(models), 'a' * Post.CONSTANT_STR)
 
     def test_post_verbose_name(self):
         """Проверка атрибуты verbose_name для модели Post"""
@@ -50,14 +55,14 @@ class PostModelTest(TestCase):
         for field, expected_value in field_help_texts:
             with self.subTest(field=field):
                 self.assertEqual(
-                    PostModelTest.post._meta.get_field(
+                    self.post._meta.get_field(
                         field).help_text,
                     expected_value
                 )
 
     def test_group_verbose_name(self):
         """Проверка атрибуты verbose_name для модели Group"""
-        group = PostModelTest.group
+        group = self.group
         field_verboses = [
             ('title', 'Заглавие'),
             ('slug', 'Название'),
@@ -78,5 +83,5 @@ class PostModelTest(TestCase):
         for field, expected_value in field_help_texts:
             with self.subTest(field=field):
                 self.assertEqual(
-                    PostModelTest.group._meta.get_field(field).help_text,
+                    self.group._meta.get_field(field).help_text,
                     expected_value)

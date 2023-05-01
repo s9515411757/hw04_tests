@@ -12,6 +12,7 @@ class PostURLTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
+        cls.user_1 = User.objects.create_user(username='auth_1')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -30,6 +31,7 @@ class PostURLTests(TestCase):
             (f'/posts/{cls.post.id}/edit/',
              'posts/create_post.html', 'author'),
             ('/create/', 'posts/create_post.html', 'authorized'),
+            ('/unexisting_page/', '', 404)
         ]
         cls.templates_names = [
             ('/', reverse('posts:index')),
@@ -49,23 +51,34 @@ class PostURLTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def test_urls_authorized_client_correct_template_all(self):
-        """Проверка автоизованному пользователю на все доступные страницы"""
-        for url, templates, access in self.templates_url_names:
-            if access == 'all':
-                with self.subTest(address=url):
-                    response = self.authorized_client.get(url)
-                    self.assertTemplateUsed(response, templates)
-                    self.assertEqual(response.status_code, 200)
+        self.authorized_client_1 = Client()
+        self.authorized_client_1.force_login(self.user_1)
 
-    def test_urls_guest_client_correct_template_all(self):
-        """Проверка неавтоизованному пользователю на все доступные страницы"""
+    def test_urls_user_exists_at_desired_location(self):
+        """Проверка неавтоизованному/автоизованному пользователю на
+        доступные адреса"""
         for url, templates, access in self.templates_url_names:
-            if access == 'all':
-                with self.subTest(address=url):
+            with self.subTest(address=url):
+                if access in ('all', 'author', 'authorized'):
+                    response = self.authorized_client.get(url)
+                    self.assertEqual(response.status_code, 200)
+                if access == 'all':
+                    response = self.guest_client.get(url)
+                    self.assertEqual(response.status_code, 200)
+                if access == 404:
+                    response = self.guest_client.get(url)
+                    self.assertEqual(response.status_code, 404)
+
+    def test_urls_uses_correct_template(self):
+        """Проверка шаблона неавтоизованному/автоизованному пользователю"""
+        for url, templates, access in self.templates_url_names:
+            with self.subTest(address=url):
+                if access in ('all', 'author', 'authorized'):
                     response = self.authorized_client.get(url)
                     self.assertTemplateUsed(response, templates)
-                    self.assertEqual(response.status_code, 200)
+                if access == 'all':
+                    response = self.guest_client.get(url)
+                    self.assertTemplateUsed(response, templates)
 
     def test_urls_authorized_client_template_author(self):
         """Проверка автоизованному пользователю на автора"""
@@ -74,16 +87,16 @@ class PostURLTests(TestCase):
                 with self.subTest(address=url):
                     response = self.authorized_client.get(url)
                     self.assertTemplateUsed(response, templates)
-                    self.assertEqual(response.status_code, 200)
 
-    def test_urls_authorized_client_template_authorized(self):
-        """Проверка автоизованному пользователю на создание поста"""
+    def test_urls_authorized_client_template_not_author(self):
+        """Проверка автоизованному пользователю на не автора"""
         for url, templates, access in self.templates_url_names:
-            if access == 'authorized':
+            if access == 'author':
                 with self.subTest(address=url):
-                    response = self.authorized_client.get(url)
-                    self.assertTemplateUsed(response, templates)
-                    self.assertEqual(response.status_code, 200)
+                    response = self.authorized_client_1.get(url)
+                    self.assertRedirects(
+                        response, f'/posts/{self.post.pk}/')
+                    self.assertEqual(response.status_code, 302)
 
     def test_urls_guest_client_correct_template(self):
         """Проверка неавтоизованному пользователю на перенаправления"""
@@ -100,8 +113,3 @@ class PostURLTests(TestCase):
         for url, name in PostURLTests.templates_names:
             with self.subTest(address=name):
                 self.assertEqual(url, name)
-
-    def test_url_guest_client_template_404(self):
-        """Проверка несуществующей страницы"""
-        response = self.guest_client.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
