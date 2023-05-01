@@ -44,10 +44,10 @@ class PostPagesTests(TestCase):
 
     def context(self, response):
         return [
-                (response.text, self.post.text),
-                (response.group, self.group),
-                (response.author, self.user)
-            ]
+            (response.text, self.post.text),
+            (response.group, self.group),
+            (response.author, self.user)
+        ]
 
     def test_task_detail_pages_show_correct_context(self):
         """Проверка контекста в шаблоне post_detail"""
