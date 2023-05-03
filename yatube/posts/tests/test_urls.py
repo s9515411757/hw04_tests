@@ -26,14 +26,15 @@ class PostURLTests(TestCase):
         cls.templates_url_names = [
             ('/', 'posts/index.html', 'all', 200),
             (f'/group/{cls.group.slug}/', 'posts/group_list.html', 'all', 200),
-            (f'/profile/{cls.user.username}/', 'posts/profile.html', 'all', 200),
+            (f'/profile/{cls.user.username}/',
+             'posts/profile.html', 'all', 200),
             (f'/posts/{cls.post.id}/', 'posts/post_detail.html', 'all', 200),
             (f'/posts/{cls.post.id}/edit/',
              'posts/create_post.html', 'author', 200),
             ('/create/', 'posts/create_post.html', 'authorized', 200),
-            ('/unexisting_page/', '', '',404)
+            ('/unexisting_page/', '', '', 404)
         ]
-        cls.author = [f'/posts/{cls.post.id}/edit/',f'/posts/{cls.post.pk}/']
+        cls.author = [f'/posts/{cls.post.id}/edit/', f'/posts/{cls.post.pk}/']
         cls.no_author = [
             f'/posts/{cls.post.id}/edit/',
             f'/auth/login/?next=/posts/{cls.post.id}/edit/'
