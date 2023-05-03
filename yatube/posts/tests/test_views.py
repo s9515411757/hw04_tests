@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-from django import forms
 from django.conf import settings
 
 from ..models import Post, Group
@@ -50,75 +49,50 @@ class PostPagesTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def context(self, response):
-        return [
+        context_post = [
             (response.text, self.post.text),
             (response.group, self.group),
             (response.author, self.user)
         ]
+        for first_object, reverse_name in context_post:
+            with self.subTest(first_object=first_object):
+                self.assertEqual(first_object, reverse_name)
 
-    def test_task_detail_pages_show_correct_context(self):
+    def test_context_post_detail_template(self):
         """Проверка контекста в шаблоне post_detail"""
         response = (self.authorized_client.get(reverse(
             'posts:post_detail', kwargs={'post_id': self.post.id}))
         ).context.get('post')
+        self.context(response)
 
-        for first_object, reverse_name in self.context(response):
-            with self.subTest(first_object=first_object):
-                self.assertEqual(first_object, reverse_name)
-
-    def test_list_show_correct_context(self):
+    def test_context_create_post_template(self):
         """Проверка контекста в шаблоне create_post"""
         response = self.authorized_client.get(reverse('posts:post_create'))
-        form_fields = [
-            ('text', forms.fields.CharField),
-            ('group', forms.fields.ChoiceField)
-        ]
-        for value, expected in form_fields:
-            with self.subTest(value=value):
-                form_field = response.context.get('form')
-                self.assertIsInstance(form_field, PostForm)
+        form_field = response.context.get('form')
+        self.assertIsInstance(form_field, PostForm)
 
-    def test_index_group_list_profile_correct_context(self):
+    def test_context_index_group_list_profile_template(self):
         """Проверка контекста в шаблонах index, group_list, profile"""
         for reverse_url in self.template_post:
             response = self.authorized_client.get(reverse_url).context.get(
-                'post'
-            )
-            for first_object, reverse_name in self.context(response):
-                with self.subTest(first_object=first_object):
-                    self.assertEqual(first_object, reverse_name)
+                'page_obj'
+            ).object_list[0]
+            self.context(response)
 
-    def test_form_post_create_show_correct_context(self):
-        """Проверка в шаблоне post_create на форму"""
-        response = self.authorized_client.get(
-            reverse('posts:post_create')
-        )
-        form_field = response.context['form']
-        self.assertIsInstance(form_field, PostForm)
-
-    def test_form_post_detail_correct_context(self):
-        """Проверка контекста в шаблоне post_detail"""
+    def test_form_for_correct_post(self):
+        """Проверка формы на правильный пост"""
         response = self.authorized_client.get(reverse(
             'posts:post_edit',
             kwargs={'post_id': self.post.pk})
         )
-        self.assertTrue(response.context['is_edit'])
+        self.assertEqual(response.context['form'].instance.pk, self.post.pk)
 
-    def test_group_correct_context(self):
+    def test_post_of_the_second_group(self):
         """Проверка существуют ли посты второй группы"""
         response = self.authorized_client.get(reverse(
             'posts:group_list', kwargs={'slug': self.group_1.slug})
         )
-        self.assertFalse(response.context['page_obj'])
-
-    def test_group_profile_detail_object_list_correct_context(self):
-        """Проверка контекста на страницах автора и группы"""
-        for reverse_url in self.template_group_profile:
-            response = self.authorized_client.get(reverse_url)
-            for post in response.context['page_obj'].object_list:
-                for first_object, reverse_name in self.context(post):
-                    with self.subTest(first_object=first_object):
-                        self.assertEqual(first_object, reverse_name)
+        self.assertNotIn(self.post, response.context['page_obj'])
 
 
 class PostPaginatorViewsTest(TestCase):

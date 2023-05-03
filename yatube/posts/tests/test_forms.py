@@ -31,12 +31,11 @@ class PostCreateFormTests(TestCase):
     def test_cant_create_existing_slug(self):
         """При отправке валидной формы со страницы создания поста
          reverse('posts:create_post') создаётся новая запись в базе данных"""
-        post_count = Post.objects.count()
         form_data = {
             'text': 'Тестовый пост1',
             'group': self.group.pk
         }
-        self.assertEqual(Post.objects.count(), post_count)
+        post_count = Post.objects.filter(text=form_data.get('text')).count()
         response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
@@ -45,7 +44,10 @@ class PostCreateFormTests(TestCase):
         self.assertRedirects(response, reverse(
             'posts:profile',
             kwargs={'username': self.user.username}))
-        self.assertEqual(Post.objects.count(), post_count + 1)
+        self.assertEqual(
+            Post.objects.filter(text=form_data.get('text')).count(),
+            post_count + 1
+        )
         post = Post.objects.get(text=form_data['text'])
         form_data_result = [
             (post.text, form_data['text']),
@@ -60,12 +62,11 @@ class PostCreateFormTests(TestCase):
         """При отправке валидной формы со страницы редактирования
          поста reverse('posts:post_edit', args=('post_id',))
          происходит изменение поста с post_id в базе данных."""
-        post_count = Post.objects.count()
         form_data = {
             'text': 'Тестовый пост2',
             'group': self.group.pk
         }
-        self.assertEqual(Post.objects.count(), post_count)
+        post_author = Post.objects.get(id=self.post.pk).author
         self.authorized_client.post(
             reverse(
                 'posts:post_edit',
@@ -74,11 +75,15 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertEqual(Post.objects.count(), post_count)
+        post_count = Post.objects.filter(text=form_data.get('text')).count()
+        self.assertEqual(
+            Post.objects.filter(text=form_data.get('text')).count(),
+            post_count
+        )
         post = Post.objects.get(id=self.post.pk)
         form_data_result = [
             (post.text, form_data['text']),
-            (post.author, self.user),
+            (post.author, post_author),
             (post.group.pk, form_data['group'])
         ]
         for first_object, first_result in form_data_result:

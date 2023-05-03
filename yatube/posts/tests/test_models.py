@@ -11,13 +11,14 @@ class PostModelTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
+        cls.title_text = 'a'
         cls.group = Group.objects.create(
-            title='a' * 20,
+            title=cls.title_text * 20,
             slug='Тестовый слаг',
             description='Тестовое описание',
         )
         cls.post = Post.objects.create(
-            text='a' * 20,
+            text=cls.title_text * 20,
             group=cls.group,
             author=cls.user,
         )
@@ -30,11 +31,13 @@ class PostModelTest(TestCase):
         ]
         for models in models_str:
             with self.subTest(models=models):
-                self.assertEqual(str(models), 'a' * Post.CONSTANT_STR)
+                self.assertEqual(
+                    str(models), self.title_text
+                    * Post.CONSTANT_STR
+                )
 
     def test_post_verbose_name(self):
         """Проверка атрибуты verbose_name для модели Post"""
-        post = PostModelTest.post
         field_verboses = [
             ('text', 'Текст'),
             ('group', 'Группа'),
@@ -43,7 +46,9 @@ class PostModelTest(TestCase):
         for field, expected_value in field_verboses:
             with self.subTest(field=field):
                 self.assertEqual(
-                    post._meta.get_field(field).verbose_name, expected_value)
+                    self.post._meta.get_field(field).verbose_name,
+                    expected_value
+                )
 
     def test_post_help_text(self):
         """Проверка атрибуты help_text для модели Post"""
