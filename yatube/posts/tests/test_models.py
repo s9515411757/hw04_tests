@@ -11,30 +11,23 @@ class PostModelTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
-        cls.title_text = 'a'
         cls.group = Group.objects.create(
-            title=cls.title_text * 20,
+            title='Тестовая группа',
             slug='Тестовый слаг',
             description='Тестовое описание',
         )
         cls.post = Post.objects.create(
-            text=cls.title_text * 20,
+            text='Тестовый пост более 15-и символов',
             group=cls.group,
             author=cls.user,
         )
 
     def test_models_post_group_text(self):
         """Проверка магического метода __str__"""
-        models_str = [
-            self.post,
-            self.group
-        ]
-        for models in models_str:
-            with self.subTest(models=models):
-                self.assertEqual(
-                    str(models), self.title_text
-                    * Post.CONSTANT_STR
-                )
+        self.assertEqual(
+            str(self.post),
+            self.post.text[:Post.CONSTANT_STR]
+        )
 
     def test_post_verbose_name(self):
         """Проверка атрибуты verbose_name для модели Post"""

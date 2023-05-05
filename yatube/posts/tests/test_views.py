@@ -14,7 +14,7 @@ class PostPagesTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
-        cls.group_1 = Group.objects.create(
+        cls.group_no_post = Group.objects.create(
             title='Тестовая группа1',
             slug='test-slug1',
             description='Тестовое описание',
@@ -62,8 +62,8 @@ class PostPagesTests(TestCase):
         """Проверка контекста в шаблоне post_detail"""
         response = (self.authorized_client.get(reverse(
             'posts:post_detail', kwargs={'post_id': self.post.id}))
-        ).context.get('post')
-        self.context(response)
+        )
+        self.context(response.context.get('post'))
 
     def test_context_create_post_template(self):
         """Проверка контекста в шаблоне create_post"""
@@ -85,13 +85,16 @@ class PostPagesTests(TestCase):
             'posts:post_edit',
             kwargs={'post_id': self.post.pk})
         )
+        form_field = response.context.get('form')
+        self.assertIsInstance(form_field, PostForm)
         self.assertEqual(response.context['form'].instance.pk, self.post.pk)
 
     def test_post_of_the_second_group(self):
         """Проверка существуют ли посты второй группы"""
         response = self.authorized_client.get(reverse(
-            'posts:group_list', kwargs={'slug': self.group_1.slug})
+            'posts:group_list', kwargs={'slug': self.group_no_post.slug})
         )
+
         self.assertNotIn(self.post, response.context['page_obj'])
 
 

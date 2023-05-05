@@ -24,15 +24,18 @@ class PostURLTests(TestCase):
             author=cls.user,
         )
         cls.templates_url_names = [
-            ('/', 'posts/index.html', 'all', 200),
-            (f'/group/{cls.group.slug}/', 'posts/group_list.html', 'all', 200),
-            (f'/profile/{cls.user.username}/',
+            (reverse('posts:index'), 'posts/index.html', 'all', 200),
+            (reverse('posts:group_list', kwargs={'slug': cls.group.slug}),
+             'posts/group_list.html', 'all', 200),
+            (reverse('posts:profile', kwargs={'username': cls.user.username}),
              'posts/profile.html', 'all', 200),
-            (f'/posts/{cls.post.id}/', 'posts/post_detail.html', 'all', 200),
-            (f'/posts/{cls.post.id}/edit/',
+            (reverse('posts:post_detail', kwargs={'post_id': cls.post.id}),
+             'posts/post_detail.html', 'all', 200),
+            (reverse('posts:post_edit', kwargs={'post_id': cls.post.id}),
              'posts/create_post.html', 'author', 200),
-            ('/create/', 'posts/create_post.html', 'authorized', 200),
-            ('/unexisting_page/', '', '', 404)
+            (reverse('posts:post_create'), 'posts/create_post.html',
+             'authorized', 200),
+            ('/unexisting_page/', '', '404', 404)
         ]
         cls.author = [f'/posts/{cls.post.id}/edit/', f'/posts/{cls.post.pk}/']
         cls.no_author = [
@@ -66,13 +69,11 @@ class PostURLTests(TestCase):
             with self.subTest(address=url):
                 if access in ('author', 'authorized'):
                     response = self.authorized_client.get(url)
-                    self.assertEqual(response.status_code, status_code)
-                if access == 'all':
+                elif access == 'all':
                     response = self.guest_client.get(url)
-                    self.assertEqual(response.status_code, status_code)
-                if access == 404:
+                elif access == '404':
                     response = self.guest_client.get(url)
-                    self.assertEqual(response.status_code, status_code)
+                self.assertEqual(response.status_code, status_code)
 
     def test_urls_uses_correct_template(self):
         """Проверка шаблона неавтоизованному/автоизованному пользователю"""
@@ -80,10 +81,11 @@ class PostURLTests(TestCase):
             with self.subTest(address=url):
                 if access in ('author', 'authorized'):
                     response = self.authorized_client.get(url)
-                    self.assertTemplateUsed(response, templates)
-                if access == 'all':
+                elif access == 'all':
                     response = self.guest_client.get(url)
-                    self.assertTemplateUsed(response, templates)
+                else:
+                    break
+                self.assertTemplateUsed(response, templates)
 
     def test_urls_authorized_client_template_not_author(self):
         """Проверка автоизованному пользователю на не автора"""

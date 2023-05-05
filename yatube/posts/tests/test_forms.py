@@ -35,7 +35,8 @@ class PostCreateFormTests(TestCase):
             'text': 'Тестовый пост1',
             'group': self.group.pk
         }
-        post_count = Post.objects.filter(text=form_data.get('text')).count()
+        post = Post.objects.all()
+        post.delete()
         response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
@@ -45,8 +46,8 @@ class PostCreateFormTests(TestCase):
             'posts:profile',
             kwargs={'username': self.user.username}))
         self.assertEqual(
-            Post.objects.filter(text=form_data.get('text')).count(),
-            post_count + 1
+            Post.objects.all().count(),
+            1
         )
         post = Post.objects.get(text=form_data['text'])
         form_data_result = [
@@ -66,7 +67,10 @@ class PostCreateFormTests(TestCase):
             'text': 'Тестовый пост2',
             'group': self.group.pk
         }
-        post_author = Post.objects.get(id=self.post.pk).author
+        self.assertEqual(
+            Post.objects.all().count(),
+            1
+        )
         self.authorized_client.post(
             reverse(
                 'posts:post_edit',
@@ -75,15 +79,14 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        post_count = Post.objects.filter(text=form_data.get('text')).count()
         self.assertEqual(
-            Post.objects.filter(text=form_data.get('text')).count(),
-            post_count
+            Post.objects.all().count(),
+            1
         )
         post = Post.objects.get(id=self.post.pk)
         form_data_result = [
             (post.text, form_data['text']),
-            (post.author, post_author),
+            (post.author, self.post.author),
             (post.group.pk, form_data['group'])
         ]
         for first_object, first_result in form_data_result:
