@@ -35,8 +35,7 @@ class PostCreateFormTests(TestCase):
             'text': 'Тестовый пост1',
             'group': self.group.pk
         }
-        post = Post.objects.all()
-        post.delete()
+        Post.objects.all().delete()
         response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
