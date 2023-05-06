@@ -48,7 +48,7 @@ class PostCreateFormTests(TestCase):
             Post.objects.all().count(),
             1
         )
-        post = Post.objects.get(text=form_data['text'])
+        post = Post.objects.first()
         form_data_result = [
             (post.text, form_data['text']),
             (post.author, self.user),
@@ -66,10 +66,7 @@ class PostCreateFormTests(TestCase):
             'text': 'Тестовый пост2',
             'group': self.group.pk
         }
-        self.assertEqual(
-            Post.objects.all().count(),
-            1
-        )
+        post_count = Post.objects.all().count()
         self.authorized_client.post(
             reverse(
                 'posts:post_edit',
@@ -80,7 +77,7 @@ class PostCreateFormTests(TestCase):
         )
         self.assertEqual(
             Post.objects.all().count(),
-            1
+            post_count
         )
         post = Post.objects.get(id=self.post.pk)
         form_data_result = [

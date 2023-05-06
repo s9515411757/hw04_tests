@@ -57,6 +57,19 @@ class PostURLTests(TestCase):
                 'posts:post_edit', kwargs={'post_id': cls.post.id})),
             ('/create/', reverse('posts:post_create')),
         ]
+        cls.urls_uses_correct_template = [
+            (reverse('posts:index'), 'posts/index.html', 'all', 200),
+            (reverse('posts:group_list', kwargs={'slug': cls.group.slug}),
+             'posts/group_list.html', 'all', 200),
+            (reverse('posts:profile', kwargs={'username': cls.user.username}),
+             'posts/profile.html', 'all', 200),
+            (reverse('posts:post_detail', kwargs={'post_id': cls.post.id}),
+             'posts/post_detail.html', 'all', 200),
+            (reverse('posts:post_edit', kwargs={'post_id': cls.post.id}),
+             'posts/create_post.html', 'author', 200),
+            (reverse('posts:post_create'), 'posts/create_post.html',
+             'authorized', 200)
+        ]
 
     def setUp(self):
         self.guest_client = Client()
@@ -67,25 +80,22 @@ class PostURLTests(TestCase):
         """Проверка неавтоизовнному/автоизованному поальзователю на
         доступные адреса"""
         for url, templates, access, status_code in self.templates_url_names:
-            with self.subTest(address=url):
+            with self.subTest(url=url):
                 if access in ('author', 'authorized'):
                     response = self.authorized_client.get(url)
-                elif access == 'all':
-                    response = self.guest_client.get(url)
-                elif access == '404':
+                elif access in ('all', '404'):
                     response = self.guest_client.get(url)
                 self.assertEqual(response.status_code, status_code)
 
     def test_urls_uses_correct_template(self):
         """Проверка шаблона неавтоизованному/автоизованному пользователю"""
-        for url, templates, access, status_code in self.templates_url_names:
-            with self.subTest(address=url):
+        for url, templates, access, status_code in (
+                self.urls_uses_correct_template):
+            with self.subTest(url=url):
                 if access in ('author', 'authorized'):
                     response = self.authorized_client.get(url)
                 elif access == 'all':
                     response = self.guest_client.get(url)
-                else:
-                    break
                 self.assertTemplateUsed(response, templates)
 
     def test_urls_authorized_client_template_not_author(self):
@@ -97,11 +107,11 @@ class PostURLTests(TestCase):
     def test_urls_guest_client_correct_template(self):
         """Проверка неавтоизованному пользователю на перенаправления"""
         for url, redirect in self.redirect_no_authorized:
-            with self.subTest(address=url):
+            with self.subTest(url=url):
                 self.assertRedirects(self.guest_client.get(url), redirect)
 
     def test_urls_guest_client_correct_template_name(self):
         """Проверка шаблонами и адресами"""
         for url, name in PostURLTests.templates_names:
-            with self.subTest(address=name):
+            with self.subTest(name=name):
                 self.assertEqual(url, name)
