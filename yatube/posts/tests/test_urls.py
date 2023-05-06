@@ -42,7 +42,8 @@ class PostURLTests(TestCase):
             f'/posts/{cls.post.id}/edit/',
             f'/auth/login/?next=/posts/{cls.post.id}/edit/'
         ]
-        cls.authorized = [reverse('posts:post_create'), '/auth/login/?next=/create/']
+        cls.authorized = [reverse('posts:post_create'),
+                          '/auth/login/?next=/create/']
         cls.redirect_no_authorized = [cls.no_author, cls.authorized]
         cls.templates_names = [
             ('/', reverse('posts:index')),
