@@ -42,7 +42,7 @@ class PostURLTests(TestCase):
             f'/posts/{cls.post.id}/edit/',
             f'/auth/login/?next=/posts/{cls.post.id}/edit/'
         ]
-        cls.authorized = ['/create/', '/auth/login/?next=/create/']
+        cls.authorized = [reverse('posts:post_create'), '/auth/login/?next=/create/']
         cls.redirect_no_authorized = [cls.no_author, cls.authorized]
         cls.templates_names = [
             ('/', reverse('posts:index')),
@@ -63,7 +63,7 @@ class PostURLTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def test_urls_user_exists_at_desired_location(self):
-        """Проверка неавтоизованному/автоизованному пользователю на
+        """Проверка неавтоизовнному/автоизованному поальзователю на
         доступные адреса"""
         for url, templates, access, status_code in self.templates_url_names:
             with self.subTest(address=url):
