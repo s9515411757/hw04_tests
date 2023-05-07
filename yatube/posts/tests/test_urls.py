@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.core.cache import cache
 
 from ..models import Post, Group
 
@@ -11,7 +12,7 @@ class PostURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user_auth = User.objects.create_user(username='auth')
+        cls.user_auth = User.objects.create_user(username='user_auth')
         cls.user = User.objects.create_user(username='user')
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -75,6 +76,9 @@ class PostURLTests(TestCase):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+
+    def tearDown(self):
+        cache.clear()
 
     def test_urls_user_exists_at_desired_location(self):
         """Проверка неавтоизовнному/автоизованному поальзователю на

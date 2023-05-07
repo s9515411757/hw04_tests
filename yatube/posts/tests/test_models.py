@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Group, Post
+from ..models import Group, Post, Comment, Follow
 
 User = get_user_model()
 
@@ -19,6 +19,15 @@ class PostModelTest(TestCase):
         cls.post = Post.objects.create(
             text='Тестовый пост более 15-и символов',
             group=cls.group,
+            author=cls.user,
+        )
+        cls.comment = Comment.objects.create(
+            post=cls.post,
+            author=cls.user,
+            text='Тестовый комментарий',
+        )
+        cls.follow = Follow.objects.create(
+            user=cls.user,
             author=cls.user,
         )
 
@@ -83,3 +92,57 @@ class PostModelTest(TestCase):
                 self.assertEqual(
                     self.group._meta.get_field(field).help_text,
                     expected_value)
+
+    def test_follow_verbose_name(self):
+        """Проверка атрибуты verbose_name для модели Follow"""
+        field_verboses = [
+            ('user', 'Подписчик'),
+            ('author', 'Автор подписки'),
+        ]
+        for field, expected_value in field_verboses:
+            with self.subTest(field=field):
+                self.assertEqual(
+                    self.follow._meta.get_field(field).verbose_name,
+                    expected_value
+                )
+
+    def test_follow_help_text(self):
+        """Проверка атрибуты help_tex для модели Follow"""
+        field_help_texts = [
+            ('user', 'Подписчик'),
+            ('author', 'Автор подписки'),
+        ]
+        for field, expected_value in field_help_texts:
+            with self.subTest(field=field):
+                self.assertEqual(
+                    self.follow._meta.get_field(field).help_text,
+                    expected_value
+                )
+
+    def test_comment_verbose_name(self):
+        """Проверка атрибуты verbose_name для модели Comment"""
+        field_verboses = [
+            ('post', 'Комментарий поста'),
+            ('author', 'Автор комментария'),
+            ('text', 'Текст комментария')
+        ]
+        for field, expected_value in field_verboses:
+            with self.subTest(field=field):
+                self.assertEqual(
+                    self.comment._meta.get_field(field).verbose_name,
+                    expected_value
+                )
+
+    def test_comment_help_text(self):
+        """Проверка атрибуты help_tex для модели Comment"""
+        field_help_texts = [
+            ('post', 'Комментарий поста'),
+            ('author', 'Автор комментария'),
+            ('text', 'Текст комментария')
+        ]
+        for field, expected_value in field_help_texts:
+            with self.subTest(field=field):
+                self.assertEqual(
+                    self.comment._meta.get_field(field).help_text,
+                    expected_value
+                )
